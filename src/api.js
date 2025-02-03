@@ -276,7 +276,7 @@ async function updateAccountContact({ directoryUrl, accountKey, contact }) {
       directoryUrl: directoryUrl,
       accountKey: accountKey
     })
-    const res = await apiRequest({
+    await apiRequest({
       apiUrl: accounturl,
       directoryUrl: directoryUrl,
       privateKey: accountKey,
@@ -284,7 +284,7 @@ async function updateAccountContact({ directoryUrl, accountKey, contact }) {
         contact: contact
       }
     })
-    return res
+    return 'success'
   } catch (err) {
     throw err
   }

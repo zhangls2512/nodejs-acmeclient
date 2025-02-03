@@ -38,8 +38,22 @@ async function verify({ authorization, accountKey, type }) {
       }
     }
     if (type == 'dns-01') {
-      const res = await dns.promises.resolveTxt(domain)
-      const records = res.flat()
+      const domainout = '_acme-challenge.' + domain
+      async function getcname(domain) {
+        try {
+          const cnames = await dns.promises.resolveCname(domain)
+          if (cnames.length > 0) {
+            return await getcname(cnames[0])
+          } else {
+            return domain
+          }
+        } catch {
+          return domain
+        }
+      }
+      const finaldomain = await getcname(domainout)
+      const txts = await dns.promises.resolveTxt(finaldomain)
+      const records = txts.flat()
       if (records.includes(keyauthorization)) {
         return 'success'
       } else {

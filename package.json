@@ -1,6 +1,6 @@
 {
   "name": "nodejs-acmeclient",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "一个基于Nodejs的ACME客户端，可用于无状态运行的云函数。",
   "keywords": [
     "nodejs",
