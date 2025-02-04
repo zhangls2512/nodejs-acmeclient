@@ -1,5 +1,5 @@
 信息对象格式遵循[RFC 8555](https://datatracker.ietf.org/doc/html/rfc8555)、[ARI](https://datatracker.ietf.org/doc/draft-ietf-acme-ari)、[profile](https://datatracker.ietf.org/doc/draft-aaron-acme-profiles)协议标准。  
-**1.获取ACME目录元数据（可能含有CA服务条款网址、订单支持的profile配置文件名）**  
+**1.获取ACME目录元数据（可能含有CA服务条款网址、订单支持的profile配置文件名列表）**  
 英文名：getDirectoryMeta `异步`  
 输入参数：`string` ACME目录URL，必需  
 输出参数  
@@ -16,9 +16,9 @@
 |---|---|---|---|
 |directoryUrl|string|是|ACME目录URL|
 |accountKey|string|是|账户私钥（pem格式）|
-|contact|array|否|联系方式（如`['mailto:example@example.com']`）|
-|eabMacKey|string|否|绑定外部账户的MAC密钥（功能未测试，请谨慎使用）|
-|eabKeyId|string|否|绑定外部账户的MAC密钥ID（功能未测试，请谨慎使用）|
+|contact|array|否|联系方式，示例：`['mailto:example@example.com']`|
+|eabMacKey|string|否|绑定外部账户的MAC密钥（此功能未测试，请谨慎使用）|
+|eabKeyId|string|否|绑定外部账户的MAC密钥ID（此功能未测试，请谨慎使用）|
 
 输出参数  
 （1）成功
@@ -71,7 +71,7 @@
 |---|---|---|---|
 |directoryUrl|string|是|ACME目录URL|
 |accountKey|string|是|账户私钥（pem格式）|
-|contact|array|是|新联系方式（如`['mailto:example@example.com']`）|
+|contact|array|是|新联系方式，示例：`['mailto:example@example.com']`|
 
 输出参数  
 （1）成功：`string` `'success'`  
@@ -102,7 +102,7 @@
 |---|---|---|---|
 |directoryUrl|string|是|ACME目录URL|
 |accountKey|string|是|账户私钥（pem格式）|
-|domains|array|是|域名、IP地址（如`['www.example.com', '0.0.0.0']`）|
+|domains|array|是|域名、IP地址，示例：`['www.example.com', '0.0.0.0']`|
 |profile|string|否|配置文件名|
 |notBefore|date|否|生效时间|
 |notAfter|date|否|过期时间|
@@ -119,7 +119,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**8.获取订单信息对象**  
+**8.获取订单信息**  
 英文名：getOrderInfo `异步`  
 输入参数：`string` 订单URL，必需  
 输出参数  
@@ -128,7 +128,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**9.获取订单授权信息对象**  
+**9.获取订单授权信息**  
 英文名：getOrderAuthorizations `异步`  
 输入参数：`string` 订单URL，必需  
 输出参数  
@@ -199,7 +199,7 @@
 输出参数  
 （1）成功：`string` 挑战验证值  
 （2）输入参数校验失败：`string` 失败原因  
-**14.响应挑战**  
+**14.请求CA验证挑战**  
 英文名：respondChallenge `异步`  
 输入参数
 

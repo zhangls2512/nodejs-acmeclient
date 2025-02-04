@@ -55,3 +55,5 @@ try {
   console.error(err)
 }
 ```
+3.运行代码  
+在`test.js`文件同级目录下的命令行终端中运行：`node test`

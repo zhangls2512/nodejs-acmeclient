@@ -1,3 +1,7 @@
+**v1.0.3（2025.2.4）**  
+1.`U` 优化`README.md`文件中的文本表述  
+**v1.0.2（2025.2.4）**  
+1.`U` 优化`.md`文件中的文本表述  
 **v1.0.1（2025.2.3）**  
 1.`U` `api`模块`updateAccountContact`方法成功输出`'success'`  
 2.`F` 验证`type`为`dns-01`挑战时未递归解析CNAME记录、未使用`_acme-challenge`子域  
