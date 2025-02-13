@@ -31,9 +31,6 @@ async function getRequest(url) {
   }
 }
 async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, jwk = false }) {
-  if (!directoryUrl || !privateKey || !payload) {
-    throw 'Invalid input: directoryUrl, privateKey and payload are required.'
-  }
   try {
     let alg = 'RS256'
     let sigalg = 'SHA256'
@@ -532,7 +529,7 @@ async function revokeCertificate({ directoryUrl, accountKey, certificateKey, cer
     let payload = {
       certificate: dercertificate
     }
-    if (reason) {
+    if (reason !== undefined) {
       payload.reason = reason
     }
     if (accountKey) {
