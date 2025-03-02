@@ -34,7 +34,7 @@ async function verify({ authorization, accountKey, type }) {
       if (res.data == keyauthorization) {
         return 'success'
       } else {
-        throw 'fail'
+        return 'fail'
       }
     }
     if (type == 'dns-01') {
@@ -57,11 +57,11 @@ async function verify({ authorization, accountKey, type }) {
       if (records.includes(keyauthorization)) {
         return 'success'
       } else {
-        throw 'fail'
+        return 'fail'
       }
     }
   } catch (err) {
-    throw 'fail'
+    throw err
   }
 }
 module.exports = {

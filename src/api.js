@@ -308,7 +308,7 @@ async function deactivateAccount({ directoryUrl, accountKey }) {
     throw err
   }
 }
-async function newOrder({ directoryUrl, accountKey, domains, profile, notBefore, notAfter }) {
+async function newOrder({ directoryUrl, accountKey, domains, profile, notBefore, notAfter, replaceCertificate }) {
   if (!directoryUrl || !accountKey || !domains || !(Array.isArray(domains) && domains.length > 0)) {
     throw 'Invalid input: directoryUrl, accountKey and domains are required.'
   }
@@ -337,6 +337,11 @@ async function newOrder({ directoryUrl, accountKey, domains, profile, notBefore,
     }
     if (notAfter) {
       payload.notAfter = notAfter
+    }
+    if (replaceCertificate) {
+      const replacecertificateinfo = crypto.getCertificateInfo(replaceCertificate)[0]
+      const replacecertificateidentifier = hexbase64url(replacecertificateinfo.authorityKeyIdentifier) + '.' + hexbase64url(replacecertificateinfo.serialNumber)
+      payload.replaces = replacecertificateidentifier
     }
     const res = await apiRequest({
       apiName: 'newOrder',

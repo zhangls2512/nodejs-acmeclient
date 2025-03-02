@@ -106,6 +106,7 @@
 |profile|string|否|配置文件名|
 |notBefore|date|否|生效时间|
 |notAfter|date|否|过期时间|
+|replaceCertificate|string|否|替代证书（pem格式）|
 
 输出参数  
 （1）成功
