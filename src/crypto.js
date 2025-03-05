@@ -1,6 +1,6 @@
 const crypto = require('crypto')
-const net = require('net')
 const { KJUR, KEYUTIL, X509 } = require('jsrsasign')
+const net = require('net')
 function generateRSAKeyPair(keybits = 2048) {
   if (![2048, 3072, 4096].includes(keybits)) {
     throw 'Invalid keybits. Please provide a valid keysize (2048, 3072, or 4096).'

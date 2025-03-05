@@ -1,6 +1,6 @@
+const axios = require('axios')
 const nodecrypto = require('crypto')
 const net = require('net')
-const axios = require('axios')
 const jose = require('node-jose')
 const crypto = require('./crypto')
 const pkg = require('../package.json')
@@ -164,6 +164,25 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
       accountUrl: res.locationUrl,
       accountInfo: res.data
     }
+  } catch (err) {
+    throw err
+  }
+}
+async function getAccountUrl({ directoryUrl, accountKey }) {
+  if (!directoryUrl || !accountKey) {
+    throw 'Invalid input: directoryUrl and accountKey are required.'
+  }
+  try {
+    const res = await apiRequest({
+      apiName: 'newAccount',
+      directoryUrl: directoryUrl,
+      privateKey: accountKey,
+      payload: {
+        onlyReturnExisting: true
+      },
+      jwk: true
+    })
+    return res.locationUrl
   } catch (err) {
     throw err
   }
@@ -368,7 +387,7 @@ async function getOrderInfo(orderUrl) {
     throw err
   }
 }
-async function getOrderAuthorizations(orderUrl) {
+async function getOrderAuthorization(orderUrl) {
   if (!orderUrl) {
     throw 'Invalid input: orderUrl is required.'
   }
@@ -569,7 +588,7 @@ module.exports = {
   deactivateAccount,
   newOrder,
   getOrderInfo,
-  getOrderAuthorizations,
+  getOrderAuthorization,
   finalizeOrder,
   getOrderCertificate,
   deactivateAuthorization,

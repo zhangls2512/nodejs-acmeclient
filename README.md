@@ -18,8 +18,8 @@ verify：与验证挑战相关的功能
 在`node_modules`文件夹同级目录下新建一个js文件，如`test.js`  
 在新建的js文件中粘贴以下代码：
 ```js
-const nac = require('nodejs-acmeclient') // nac可自定义
-async function test() { //test可自定义
+const acme = require('nodejs-acmeclient') // acme可自定义
+async function test() { // test可自定义
   // 要运行的代码
 }
 test()
@@ -48,8 +48,8 @@ test()
 3.示例代码（替换上方要运行的代码）
 ```js
 try {
-  const res= nac.模块名.方法英文名(输入参数) // 同步
-  const res= await nac.模块名.方法英文名(输入参数) // 异步
+  const res= acme.模块名.方法英文名(输入参数) // 同步
+  const res= await acme.模块名.方法英文名(输入参数) // 异步
   console.log(res)
 } catch (err) {
   console.error(err)

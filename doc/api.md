@@ -32,7 +32,22 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**3.获取账户信息**  
+**3.获取账户Url**  
+英文名：getAccountUrl `异步`  
+输入参数
+
+|名|类型|必需|说明|
+|---|---|---|---|
+|directoryUrl|string|是|ACME目录URL|
+|accountKey|string|是|账户私钥（pem格式）|
+
+输出参数  
+（1）成功：`string` 账户URL  
+（2）输入参数校验失败：`string` 失败原因  
+（3）HTTP(S)请求失败  
+`err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
+`err.response`不存在：`object` `axios`返回的完整错误信息  
+**4.获取账户信息**  
 英文名：getAccountInfo `异步`  
 输入参数
 
@@ -47,7 +62,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**4.更新账户私钥**  
+**5.更新账户私钥**  
 英文名：updateAccountKey `异步`  
 输入参数
 
@@ -63,7 +78,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**5.更新账户联系方式**  
+**6.更新账户联系方式**  
 英文名：updateAccountContact `异步`  
 输入参数
 
@@ -79,7 +94,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**6.停用账户**  
+**7.停用账户**  
 英文名：deactivateAccount `异步`  
 输入参数
 
@@ -94,7 +109,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**7.创建订单**  
+**8.创建订单**  
 英文名：newOrder `异步`  
 输入参数
 
@@ -120,7 +135,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**8.获取订单信息**  
+**9.获取订单信息**  
 英文名：getOrderInfo `异步`  
 输入参数：`string` 订单URL，必需  
 输出参数  
@@ -129,8 +144,8 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**9.获取订单授权信息**  
-英文名：getOrderAuthorizations `异步`  
+**10.获取订单授权信息**  
+英文名：getOrderAuthorization `异步`  
 输入参数：`string` 订单URL，必需  
 输出参数  
 （1）成功：`array` 授权信息对象  
@@ -139,7 +154,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**10.完成订单**  
+**11.完成订单**  
 英文名：finalizeOrder `异步`  
 输入参数
 
@@ -162,7 +177,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**11.获取订单证书**  
+**12.获取订单证书**  
 英文名：getOrderCertificate `异步`  
 输入参数：`string` 订单URL，必需  
 输出参数  
@@ -172,7 +187,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**12.停用授权**  
+**13.停用授权**  
 英文名：deactivateAuthorization `异步`  
 输入参数
 
@@ -188,7 +203,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**13.获取挑战验证值（用于验证挑战是否完成的文件内容、DNS解析记录值...）**  
+**14.获取挑战验证值（用于验证挑战是否完成的文件内容、DNS解析记录值...）**  
 英文名：getChallengeKeyAuthorization `同步`  
 输入参数
 
@@ -200,7 +215,7 @@
 输出参数  
 （1）成功：`string` 挑战验证值  
 （2）输入参数校验失败：`string` 失败原因  
-**14.请求CA验证挑战**  
+**15.请求CA验证挑战**  
 英文名：respondChallenge `异步`  
 输入参数
 
@@ -222,7 +237,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**15.获取证书ARI续订信息**  
+**16.获取证书ARI续订信息**  
 英文名：getCertificateRenewalInfo `异步`  
 输入参数
 
@@ -237,7 +252,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**16.吊销证书**  
+**17.吊销证书**  
 英文名：revokeCertificate `异步`  
 输入参数
 

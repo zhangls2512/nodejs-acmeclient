@@ -1,3 +1,6 @@
+**v1.0.7（2025.3.5）**  
+1.`A` `api`模块新增`getAccountUrl`方法  
+2.`U` `api`模块`getOrderAuthorizations`方法更名为`getOrderAuthorization`  
 **v1.0.6（2025.3.2）**  
 1.`U` `api`模块`newOrder`方法新增输入参数`replaceCertificate`  
 2.`F` `verify`模块`verify`方法验证失败输出`fail`而非抛出`fail`  

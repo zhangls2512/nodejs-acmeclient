@@ -1,5 +1,5 @@
-const dns = require('dns')
 const axios = require('axios')
+const dns = require('dns')
 const api = require('./api')
 const pkg = require('../package.json')
 async function verify({ authorization, accountKey, type }) {
