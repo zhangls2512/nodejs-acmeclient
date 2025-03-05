@@ -582,6 +582,7 @@ async function revokeCertificate({ directoryUrl, accountKey, certificateKey, cer
 module.exports = {
   getDirectoryMeta,
   newAccount,
+  getAccountUrl,
   getAccountInfo,
   updateAccountKey,
   updateAccountContact,
