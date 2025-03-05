@@ -1,3 +1,5 @@
+**v1.0.8（2025.3.5）**  
+1.`U` 优化`api.md`文件中的文本表述  
 **v1.0.7（2025.3.5）**  
 1.`A` `api`模块新增`getAccountUrl`方法  
 2.`U` `api`模块`getOrderAuthorizations`方法更名为`getOrderAuthorization`  

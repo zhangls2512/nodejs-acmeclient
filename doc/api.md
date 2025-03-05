@@ -32,7 +32,7 @@
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**3.获取账户Url**  
+**3.获取账户URL**  
 英文名：getAccountUrl `异步`  
 输入参数
 
