@@ -444,7 +444,7 @@ async function getOrderCertificate(orderUrl) {
       }
     })
     let certificates = [res.data]
-    const regex = /<([^>]+)>;\s*rel='alternate'/g
+    const regex = /<([^>]+)>;rel="alternate"/g
     let match
     let alternates = []
     while ((match = regex.exec(res.headers.link))) {
