@@ -156,8 +156,8 @@ function getCertificateInfo(certificatein) {
       commonName: commonname,
       subjectAltName: subjectaltname,
       issuerCommonName: issuercommonname,
-      startDate: certificate.validFromDate,
-      endDate: certificate.validToDate,
+      startDate: new Date(certificate.validFrom),
+      endDate: new Date(certificate.validTo),
       authorityKeyIdentifier: x509.getExtAuthorityKeyIdentifier().kid.hex,
       serialNumber: x509.getSerialNumberHex()
     })

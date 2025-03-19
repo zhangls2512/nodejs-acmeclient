@@ -1,3 +1,5 @@
+**v1.0.11（2025.3.19）**  
+1.`F` 修改`crypto`模块`getCertificateInfo`方法获取`startDate`、`endDate`的逻辑以兼容低于`23.0.0`的`Nodejs`版本  
 **v1.0.10（2025.3.6）**  
 1.`F` 修复`api`模块`getOrderCertificate`方法未输出替代证书  
 **v1.0.9（2025.3.5）**  

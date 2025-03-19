@@ -453,7 +453,6 @@ async function getOrderCertificate(orderUrl) {
     const promises = alternates.map(async (item) => {
       const alternateres = await getRequest(item)
       certificates.push(alternateres)
-      return
     })
     await Promise.all(promises)
     return certificates
