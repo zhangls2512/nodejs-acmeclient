@@ -187,25 +187,6 @@ async function getAccountUrl({ directoryUrl, accountKey }) {
     throw err
   }
 }
-async function getAccountUrl({ directoryUrl, accountKey }) {
-  if (!directoryUrl || !accountKey) {
-    throw 'Invalid input: directoryUrl and accountKey are required.'
-  }
-  try {
-    const res = await apiRequest({
-      apiName: 'newAccount',
-      directoryUrl: directoryUrl,
-      privateKey: accountKey,
-      payload: {
-        onlyReturnExisting: true
-      },
-      jwk: true
-    })
-    return res.locationUrl
-  } catch (err) {
-    throw err
-  }
-}
 async function getAccountInfo({ directoryUrl, accountKey }) {
   if (!directoryUrl || !accountKey) {
     throw 'Invalid input: directoryUrl and accountKey are required.'

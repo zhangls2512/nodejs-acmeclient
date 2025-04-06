@@ -1,3 +1,5 @@
+**v1.0.12（2025.4.6）**  
+1.`F` 移除`api`模块重复的`getAccountUrl`方法  
 **v1.0.11（2025.3.19）**  
 1.`F` 修改`crypto`模块`getCertificateInfo`方法获取`startDate`、`endDate`的逻辑以兼容低于`23.0.0`的`Nodejs`版本  
 **v1.0.10（2025.3.6）**  
