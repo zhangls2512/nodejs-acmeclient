@@ -33,9 +33,8 @@ async function verify({ authorization, accountKey, type }) {
       })
       if (res.data == keyauthorization) {
         return 'success'
-      } else {
-        return 'fail'
       }
+      return 'fail'
     }
     if (type == 'dns-01') {
       const domainout = '_acme-challenge.' + domain
@@ -44,9 +43,8 @@ async function verify({ authorization, accountKey, type }) {
           const cnames = await dns.promises.resolveCname(domain)
           if (cnames.length > 0) {
             return await getcname(cnames[0])
-          } else {
-            return domain
           }
+          return domain
         } catch {
           return domain
         }
@@ -56,9 +54,8 @@ async function verify({ authorization, accountKey, type }) {
       const records = txts.flat()
       if (records.includes(keyauthorization)) {
         return 'success'
-      } else {
-        return 'fail'
       }
+      return 'fail'
     }
   } catch (err) {
     throw err

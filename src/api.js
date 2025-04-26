@@ -20,14 +20,13 @@ async function getRequest(url) {
     return res.data
   } catch (err) {
     if (err.response) {
-      let error = err.response.data
+      const error = err.response.data
       if (err.response.headers['retry-after']) {
         error.retryAfter = err.response.headers['retry-after']
       }
       throw error
-    } else {
-      throw err
     }
+    throw err
   }
 }
 async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, jwk = false }) {
@@ -60,7 +59,7 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     }
     const nonceres = await axios.head(directoryres.newNonce)
     const nonce = nonceres.headers['replay-nonce']
-    let protected = {
+    const protected = {
       alg: alg,
       nonce: nonce,
       url: apiurl
@@ -91,7 +90,7 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
         'User-Agent': `${pkg.name}/${pkg.version}`
       }
     })
-    let res = {
+    const res = {
       data: resp.data
     }
     if (resp.headers['retry-after']) {
@@ -103,14 +102,13 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     return res
   } catch (err) {
     if (err.response) {
-      let error = err.response.data
+      const error = err.response.data
       if (err.response.headers['retry-after']) {
         error.retryAfter = err.response.headers['retry-after']
       }
       throw error
-    } else {
-      throw err
     }
+    throw err
   }
 }
 async function getDirectoryMeta(directoryUrl) {
@@ -129,7 +127,7 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
     throw 'Invalid input: directoryUrl and accountKey are required.'
   }
   try {
-    let payload = {
+    const payload = {
       termsOfServiceAgreed: true
     }
     if (contact) {
@@ -319,14 +317,13 @@ async function newOrder({ directoryUrl, accountKey, domains, profile, notBefore,
           type: 'ip',
           value: item
         }
-      } else {
-        return {
-          type: 'dns',
-          value: item
-        }
+      }
+      return {
+        type: 'dns',
+        value: item
       }
     })
-    let payload = {
+    const payload = {
       identifiers: identifiers
     }
     if (profile) {
@@ -401,7 +398,7 @@ async function finalizeOrder({ directoryUrl, accountKey, orderUrl, csr }) {
         csr: dercsr
       }
     })
-    let result = {
+    const result = {
       status: 'success'
     }
     if (res.retryAfter) {
@@ -424,10 +421,10 @@ async function getOrderCertificate(orderUrl) {
         'User-Agent': `${pkg.name}/${pkg.version}`
       }
     })
-    let certificates = [res.data]
+    const certificates = [res.data]
     const regex = /<([^>]+)>;rel="alternate"/g
     let match
-    let alternates = []
+    const alternates = []
     while ((match = regex.exec(res.headers.link))) {
       alternates.push(match[1])
     }
@@ -475,9 +472,8 @@ function getChallengeKeyAuthorization({ challenge, accountKey }) {
   const keyauthorization = `${token}.${thumbprint}`
   if (challenge.type == 'http-01') {
     return keyauthorization
-  } else {
-    return nodecrypto.createHash('SHA256').update(keyauthorization).digest('base64url')
   }
+  return nodecrypto.createHash('SHA256').update(keyauthorization).digest('base64url')
 }
 async function respondChallenge({ directoryUrl, accountKey, challengeUrl }) {
   if (!directoryUrl || !accountKey || !challengeUrl) {
@@ -490,7 +486,7 @@ async function respondChallenge({ directoryUrl, accountKey, challengeUrl }) {
       privateKey: accountKey,
       payload: {}
     })
-    let result = {
+    const result = {
       status: 'success'
     }
     if (res.retryAfter) {
@@ -509,12 +505,11 @@ async function getCertificateRenewalInfo({ directoryUrl, certificate }) {
     const directoryres = await getRequest(directoryUrl)
     if (!directoryres.renewalInfo) {
       throw 'RenewalInfo is not supported.'
-    } else {
-      const certificateinfo = crypto.getCertificateInfo(certificate)[0]
-      const url = directoryres.renewalInfo + '/' + hexbase64url(certificateinfo.authorityKeyIdentifier) + '.' + hexbase64url(certificateinfo.serialNumber)
-      const res = await getRequest(url)
-      return res
     }
+    const certificateinfo = crypto.getCertificateInfo(certificate)[0]
+    const url = directoryres.renewalInfo + '/' + hexbase64url(certificateinfo.authorityKeyIdentifier) + '.' + hexbase64url(certificateinfo.serialNumber)
+    const res = await getRequest(url)
+    return res
   } catch (err) {
     throw err
   }
@@ -530,7 +525,7 @@ async function revokeCertificate({ directoryUrl, accountKey, certificateKey, cer
     const leafcertificate = crypto.extractCertificates(certificate)[0]
     const certificateout = leafcertificate.replace(/-----BEGIN CERTIFICATE-----/g, '').replace(/-----END CERTIFICATE-----/g, '').replace(/\s/g, '')
     const dercertificate = base64url(Buffer.from(certificateout, 'base64'))
-    let payload = {
+    const payload = {
       certificate: dercertificate
     }
     if (reason !== undefined) {

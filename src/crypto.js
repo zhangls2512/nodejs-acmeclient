@@ -75,9 +75,8 @@ function generateCsr({ commonName, subjectAltName, privateKey }) {
   const subjectaltname = subjectAltName.map(item => {
     if (net.isIP(item)) {
       return { ip: item }
-    } else {
-      return { dns: item }
     }
+    return { dns: item }
   })
   let sigalg = 'SHA256withRSA'
   const keyinfo = getKeyInfo(privateKey)
@@ -141,10 +140,15 @@ function getCertificateInfo(certificatein) {
     throw 'Invalid input: certificate is required.'
   }
   const certificates = extractCertificates(certificatein)
-  let certificatesinfo = []
+  const certificatesinfo = []
   certificates.forEach(item => {
     const certificate = new crypto.X509Certificate(item)
-    const commonname = certificate.subject.match(/CN=([^,\\\n]+)/)[1]
+    let commonname = ''
+    try {
+      commonname = certificate.subject.match(/CN=([^,\\\n]+)/)[1]
+    } catch {
+      commonname = 'unknown'
+    }
     const issuercommonname = certificate.issuer.match(/CN=([^,\\\n]+)/)[1]
     let subjectaltname = []
     if (certificate.subjectAltName) {
