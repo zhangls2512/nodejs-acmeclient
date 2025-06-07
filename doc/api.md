@@ -269,4 +269,4 @@
 （2）输入参数校验失败：`string` 失败原因  
 （3）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
-`err.response`不存在：`object` `axios`返回的完整错误信息  
+`err.response`不存在：`object` `axios`返回的完整错误信息
