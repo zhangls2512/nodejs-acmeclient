@@ -117,14 +117,18 @@ function getCsrInfo(csrin) {
     throw 'Invalid input: csr is required.'
   }
   const csr = KJUR.asn1.csr.CSRUtil.getParam(csrin)
-  return {
+  const csrinfo = {
     commonName: csr.subject.str.match(/\/CN=([^,]+)/)[1],
-    subjectAltName: csr.extreq.find(extension => extension.extname == 'subjectAltName').array.map(item => {
-      return Object.values(item)[0]
-    }),
+    subjectAltName: [],
     publicKey: csr.sbjpubkey,
     signatureAlgorithm: csr.sigalg
   }
+  if (csr.extreq) {
+    csrinfo.subjectAltName = csr.extreq.find(extension => extension.extname == 'subjectAltName').array.map(item => {
+      return Object.values(item)[0]
+    })
+  }
+  return csrinfo
 }
 function extractCertificates(certificate) {
   const certificatepattern = /-----BEGIN CERTIFICATE-----\n([\s\S]*?)\n-----END CERTIFICATE-----/g
