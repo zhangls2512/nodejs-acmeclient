@@ -6,7 +6,7 @@
 **二、文件用途说明**  
 doc/：各模块使用文档  
 src/：各模块源代码  
-updatelog.md：本包更新日志  
+CHANGELOG.md：本包更新日志  
 **三、各模块功能说明**  
 api：与请求ACME服务器提供的API相关的功能  
 crypto：与密钥、CSR、证书相关的功能  
