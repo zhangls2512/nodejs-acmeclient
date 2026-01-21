@@ -14,7 +14,7 @@ async function getRequest(url) {
   try {
     const res = await axios.get(url, {
       headers: {
-        'User-Agent': `${pkg.name}/${pkg.version}`
+        'User-Agent': pkg.name + pkg.version
       }
     })
     return res.data
@@ -32,7 +32,7 @@ async function getRequest(url) {
 async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, jwk = false }) {
   try {
     let alg = 'RS256'
-    let sigalg = 'SHA256'
+    let sigalg = 'sha256'
     const keyinfo = crypto.getKeyInfo(privateKey)
     if (keyinfo.keyType == 'ECDSA') {
       if (keyinfo.curveName == 'secp256r1') {
@@ -40,11 +40,11 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
       }
       if (keyinfo.curveName == 'secp384r1') {
         alg = 'ES384'
-        sigalg = 'SHA384'
+        sigalg = 'sha384'
       }
       if (keyinfo.curveName == 'secp521r1') {
         alg = 'ES512'
-        sigalg = 'SHA512'
+        sigalg = 'sha512'
       }
     }
     const jwkout = await jose.JWK.asKey(privateKey, 'pem', {
@@ -75,7 +75,7 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     }
     const encodedprotected = base64url(JSON.stringify(protected))
     const encodedpayload = base64url(JSON.stringify(payload))
-    const signature = nodecrypto.createSign(sigalg).update(`${encodedprotected}.${encodedpayload}`).sign({
+    const signature = nodecrypto.createSign(sigalg).update(encodedprotected + encodedpayload).sign({
       key: privateKey,
       dsaEncoding: 'ieee-p1363'
     }, 'base64url')
@@ -87,7 +87,7 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     const resp = await axios.post(apiurl, jws, {
       headers: {
         'Content-Type': 'application/jose+json',
-        'User-Agent': `${pkg.name}/${pkg.version}`
+        'User-Agent': pkg.name + pkg.version
       }
     })
     const res = {
@@ -144,7 +144,7 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
       }
       const encodedprotected = base64url(JSON.stringify(protected))
       const encodedpayload = base64url(JSON.stringify(jwk))
-      const signature = nodecrypto.createHmac('SHA256', Buffer.from(eabMacKey, 'base64')).update(`${encodedprotected}.${encodedpayload}`).digest('base64url')
+      const signature = nodecrypto.createHmac('sha256', Buffer.from(eabMacKey, 'base64')).update(encodedprotected + encodedpayload).digest('base64url')
       payload.externalAccountBinding = {
         protected: encodedprotected,
         payload: encodedpayload,
@@ -210,7 +210,7 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
   }
   try {
     let alg = 'RS256'
-    let sigalg = 'SHA256'
+    let sigalg = 'sha256'
     const keyinfo = crypto.getKeyInfo(newAccountKey)
     if (keyinfo.keyType == 'ECDSA') {
       if (keyinfo.curveName == 'secp256r1') {
@@ -218,11 +218,11 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
       }
       if (keyinfo.curveName == 'secp384r1') {
         alg = 'ES384'
-        sigalg = 'SHA384'
+        sigalg = 'sha384'
       }
       if (keyinfo.curveName == 'secp521r1') {
         alg = 'ES512'
-        sigalg = 'SHA512'
+        sigalg = 'sha512'
       }
     }
     const oldjwk = await jose.JWK.asKey(accountKey, 'pem')
@@ -243,7 +243,7 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
       account: accounturl,
       oldKey: oldjwk
     }))
-    const signature = nodecrypto.createSign(sigalg).update(`${protected}.${payload}`).sign({
+    const signature = nodecrypto.createSign(sigalg).update(protected + payload).sign({
       key: newAccountKey,
       dsaEncoding: 'ieee-p1363'
     }, 'base64url')
@@ -359,8 +359,7 @@ async function getOrderInfo(orderUrl) {
     throw 'Invalid input: orderUrl is required.'
   }
   try {
-    const res = await getRequest(orderUrl)
-    return res
+    return await getRequest(orderUrl)
   } catch (err) {
     throw err
   }
@@ -373,11 +372,9 @@ async function getOrderAuthorization(orderUrl) {
     const orderres = await getRequest(orderUrl)
     const authorizationsurl = orderres.authorizations
     const promises = authorizationsurl.map(async (item) => {
-      const authorizationres = await getRequest(item)
-      return authorizationres
+      return await getRequest(item)
     })
-    const authorizations = await Promise.all(promises)
-    return authorizations
+    return await Promise.all(promises)
   } catch (err) {
     throw err
   }
@@ -418,7 +415,7 @@ async function getOrderCertificate(orderUrl) {
     const certificateurl = orderres.certificate
     const res = await axios.get(certificateurl, {
       headers: {
-        'User-Agent': `${pkg.name}/${pkg.version}`
+        'User-Agent': pkg.name + pkg.version
       }
     })
     const certificates = [res.data]
@@ -468,12 +465,12 @@ function getChallengeKeyAuthorization({ challenge, accountKey }) {
     return result
   }, {})
   const token = challenge.token
-  const thumbprint = nodecrypto.createHash('SHA256').update(JSON.stringify(res)).digest('base64url')
-  const keyauthorization = `${token}.${thumbprint}`
+  const thumbprint = nodecrypto.createHash('sha256').update(JSON.stringify(res)).digest('base64url')
+  const keyauthorization = token + thumbprint
   if (challenge.type == 'http-01') {
     return keyauthorization
   }
-  return nodecrypto.createHash('SHA256').update(keyauthorization).digest('base64url')
+  return nodecrypto.createHash('sha256').update(keyauthorization).digest('base64url')
 }
 async function respondChallenge({ directoryUrl, accountKey, challengeUrl }) {
   if (!directoryUrl || !accountKey || !challengeUrl) {
@@ -508,8 +505,7 @@ async function getCertificateRenewalInfo({ directoryUrl, certificate }) {
     }
     const certificateinfo = crypto.getCertificateInfo(certificate)[0]
     const url = directoryres.renewalInfo + '/' + hexbase64url(certificateinfo.authorityKeyIdentifier) + '.' + hexbase64url(certificateinfo.serialNumber)
-    const res = await getRequest(url)
-    return res
+    return await getRequest(url)
   } catch (err) {
     throw err
   }

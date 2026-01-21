@@ -28,7 +28,7 @@ async function verify({ authorization, accountKey, type }) {
       const url = 'http://' + domain + '/.well-known/acme-challenge/' + challenge.token
       const res = await axios.get(url, {
         headers: {
-          'User-Agent': `${pkg.name}/${pkg.version}`
+          'User-Agent': pkg.name + pkg.version
         }
       })
       if (res.data == keyauthorization) {

@@ -74,9 +74,13 @@ function generateCsr({ commonName, subjectAltName, privateKey }) {
   }
   const subjectaltname = subjectAltName.map(item => {
     if (net.isIP(item)) {
-      return { ip: item }
+      return {
+        ip: item
+      }
     }
-    return { dns: item }
+    return {
+      dns: item
+    }
   })
   let sigalg = 'SHA256withRSA'
   const keyinfo = getKeyInfo(privateKey)
@@ -109,8 +113,7 @@ function generateCsr({ commonName, subjectAltName, privateKey }) {
     ],
     sigalg: sigalg
   })
-  const pemcsr = csr.getPEM()
-  return pemcsr
+  return csr.getPEM()
 }
 function getCsrInfo(csrin) {
   if (!csrin) {
