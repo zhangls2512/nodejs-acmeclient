@@ -14,7 +14,7 @@ async function getRequest(url) {
   try {
     const res = await axios.get(url, {
       headers: {
-        'User-Agent': pkg.name + pkg.version
+        'User-Agent': pkg.name + '/' + pkg.version
       }
     })
     return res.data
@@ -87,7 +87,7 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     const resp = await axios.post(apiurl, jws, {
       headers: {
         'Content-Type': 'application/jose+json',
-        'User-Agent': pkg.name + pkg.version
+        'User-Agent': pkg.name + '/' + pkg.version
       }
     })
     const res = {
@@ -415,7 +415,7 @@ async function getOrderCertificate(orderUrl) {
     const certificateurl = orderres.certificate
     const res = await axios.get(certificateurl, {
       headers: {
-        'User-Agent': pkg.name + pkg.version
+        'User-Agent': pkg.name + '/' + pkg.version
       }
     })
     const certificates = [res.data]
@@ -466,7 +466,7 @@ function getChallengeKeyAuthorization({ challenge, accountKey }) {
   }, {})
   const token = challenge.token
   const thumbprint = nodecrypto.createHash('sha256').update(JSON.stringify(res)).digest('base64url')
-  const keyauthorization = token + thumbprint
+  const keyauthorization = token + '.' + thumbprint
   if (challenge.type == 'http-01') {
     return keyauthorization
   }
