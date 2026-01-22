@@ -75,7 +75,7 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     }
     const encodedprotected = base64url(JSON.stringify(protected))
     const encodedpayload = base64url(JSON.stringify(payload))
-    const signature = nodecrypto.createSign(sigalg).update(encodedprotected + encodedpayload).sign({
+    const signature = nodecrypto.createSign(sigalg).update(encodedprotected + '.' + encodedpayload).sign({
       key: privateKey,
       dsaEncoding: 'ieee-p1363'
     }, 'base64url')
@@ -144,7 +144,7 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
       }
       const encodedprotected = base64url(JSON.stringify(protected))
       const encodedpayload = base64url(JSON.stringify(jwk))
-      const signature = nodecrypto.createHmac('sha256', Buffer.from(eabMacKey, 'base64')).update(encodedprotected + encodedpayload).digest('base64url')
+      const signature = nodecrypto.createHmac('sha256', Buffer.from(eabMacKey, 'base64')).update(encodedprotected + '.' + encodedpayload).digest('base64url')
       payload.externalAccountBinding = {
         protected: encodedprotected,
         payload: encodedpayload,
@@ -243,7 +243,7 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
       account: accounturl,
       oldKey: oldjwk
     }))
-    const signature = nodecrypto.createSign(sigalg).update(protected + payload).sign({
+    const signature = nodecrypto.createSign(sigalg).update(protected + '.' + payload).sign({
       key: newAccountKey,
       dsaEncoding: 'ieee-p1363'
     }, 'base64url')
