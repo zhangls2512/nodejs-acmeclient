@@ -58,10 +58,9 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
       apiurl = directoryres[apiName]
     }
     const nonceres = await axios.head(directoryres.newNonce)
-    const nonce = nonceres.headers['replay-nonce']
     const protected = {
       alg: alg,
-      nonce: nonce,
+      nonce: nonceres.headers['replay-nonce'],
       url: apiurl
     }
     if (jwk) {
@@ -75,29 +74,27 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     }
     const encodedprotected = base64url(JSON.stringify(protected))
     const encodedpayload = base64url(JSON.stringify(payload))
-    const signature = nodecrypto.createSign(sigalg).update(encodedprotected + '.' + encodedpayload).sign({
-      key: privateKey,
-      dsaEncoding: 'ieee-p1363'
-    }, 'base64url')
-    const jws = {
+    const response = await axios.post(apiurl, {
       protected: encodedprotected,
       payload: encodedpayload,
-      signature: signature
-    }
-    const resp = await axios.post(apiurl, jws, {
+      signature: nodecrypto.createSign(sigalg).update(encodedprotected + '.' + encodedpayload).sign({
+        key: privateKey,
+        dsaEncoding: 'ieee-p1363'
+      }, 'base64url')
+    }, {
       headers: {
         'Content-Type': 'application/jose+json',
         'User-Agent': pkg.name + '/' + pkg.version
       }
     })
     const res = {
-      data: resp.data
+      data: response.data
     }
-    if (resp.headers['retry-after']) {
-      res.retryAfter = resp.headers['retry-after']
+    if (response.headers['retry-after']) {
+      res.retryAfter = response.headers['retry-after']
     }
-    if (resp.headers.location) {
-      res.locationUrl = resp.headers.location
+    if (response.headers.location) {
+      res.locationUrl = response.headers.location
     }
     return res
   } catch (err) {
@@ -136,19 +133,16 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
     if (eabMacKey && eabKeyId) {
       const jwk = await jose.JWK.asKey(accountKey, 'pem')
       const directoryres = await getRequest(directoryUrl)
-      const apiurl = directoryres.newAccount
-      const protected = {
+      const encodedprotected = base64url(JSON.stringify({
         alg: 'HS256',
         kid: eabKeyId,
-        url: apiurl
-      }
-      const encodedprotected = base64url(JSON.stringify(protected))
+        url: directoryres.newAccount
+      }))
       const encodedpayload = base64url(JSON.stringify(jwk))
-      const signature = nodecrypto.createHmac('sha256', Buffer.from(eabMacKey, 'base64')).update(encodedprotected + '.' + encodedpayload).digest('base64url')
       payload.externalAccountBinding = {
         protected: encodedprotected,
         payload: encodedpayload,
-        signature: signature
+        signature: nodecrypto.createHmac('sha256', Buffer.from(eabMacKey, 'base64')).update(encodedprotected + '.' + encodedpayload).digest('base64url')
       }
     }
     const res = await apiRequest({
@@ -243,10 +237,6 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
       account: accounturl,
       oldKey: oldjwk
     }))
-    const signature = nodecrypto.createSign(sigalg).update(protected + '.' + payload).sign({
-      key: newAccountKey,
-      dsaEncoding: 'ieee-p1363'
-    }, 'base64url')
     await apiRequest({
       apiName: 'keyChange',
       directoryUrl: directoryUrl,
@@ -254,7 +244,10 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
       payload: {
         protected: protected,
         payload: payload,
-        signature: signature
+        signature: nodecrypto.createSign(sigalg).update(protected + '.' + payload).sign({
+          key: newAccountKey,
+          dsaEncoding: 'ieee-p1363'
+        }, 'base64url')
       }
     })
     return 'success'
@@ -370,8 +363,7 @@ async function getOrderAuthorization(orderUrl) {
   }
   try {
     const orderres = await getRequest(orderUrl)
-    const authorizationsurl = orderres.authorizations
-    const promises = authorizationsurl.map(async (item) => {
+    const promises = orderres.authorizations.map(async (item) => {
       return await getRequest(item)
     })
     return await Promise.all(promises)
@@ -385,14 +377,13 @@ async function finalizeOrder({ directoryUrl, accountKey, orderUrl, csr }) {
   }
   try {
     const csrout = csr.replace(/-----BEGIN CERTIFICATE REQUEST-----/g, '').replace(/-----END CERTIFICATE REQUEST-----/g, '').replace(/\s/g, '')
-    const dercsr = base64url(Buffer.from(csrout, 'base64'))
     const orderres = await getOrderInfo(orderUrl)
     const res = await apiRequest({
       apiUrl: orderres.finalize,
       directoryUrl: directoryUrl,
       privateKey: accountKey,
       payload: {
-        csr: dercsr
+        csr: base64url(Buffer.from(csrout, 'base64'))
       }
     })
     const result = {
@@ -412,8 +403,7 @@ async function getOrderCertificate(orderUrl) {
   }
   try {
     const orderres = await getOrderInfo(orderUrl)
-    const certificateurl = orderres.certificate
-    const res = await axios.get(certificateurl, {
+    const res = await axios.get(orderres.certificate, {
       headers: {
         'User-Agent': pkg.name + '/' + pkg.version
       }
@@ -464,9 +454,8 @@ function getChallengeKeyAuthorization({ challenge, accountKey }) {
     result[k] = jwk[k]
     return result
   }, {})
-  const token = challenge.token
   const thumbprint = nodecrypto.createHash('sha256').update(JSON.stringify(res)).digest('base64url')
-  const keyauthorization = token + '.' + thumbprint
+  const keyauthorization = challenge.token + '.' + thumbprint
   if (challenge.type == 'http-01') {
     return keyauthorization
   }
@@ -504,8 +493,7 @@ async function getCertificateRenewalInfo({ directoryUrl, certificate }) {
       throw 'RenewalInfo is not supported.'
     }
     const certificateinfo = crypto.getCertificateInfo(certificate)[0]
-    const url = directoryres.renewalInfo + '/' + hexbase64url(certificateinfo.authorityKeyIdentifier) + '.' + hexbase64url(certificateinfo.serialNumber)
-    return await getRequest(url)
+    return await getRequest(directoryres.renewalInfo + '/' + hexbase64url(certificateinfo.authorityKeyIdentifier) + '.' + hexbase64url(certificateinfo.serialNumber))
   } catch (err) {
     throw err
   }
@@ -518,11 +506,9 @@ async function revokeCertificate({ directoryUrl, accountKey, certificateKey, cer
     throw 'Invalid input: accountKey or certificateKey is required.'
   }
   try {
-    const leafcertificate = crypto.extractCertificates(certificate)[0]
-    const certificateout = leafcertificate.replace(/-----BEGIN CERTIFICATE-----/g, '').replace(/-----END CERTIFICATE-----/g, '').replace(/\s/g, '')
-    const dercertificate = base64url(Buffer.from(certificateout, 'base64'))
+    const certificateout = crypto.extractCertificates(certificate)[0].replace(/-----BEGIN CERTIFICATE-----/g, '').replace(/-----END CERTIFICATE-----/g, '').replace(/\s/g, '')
     const payload = {
-      certificate: dercertificate
+      certificate: base64url(Buffer.from(certificateout, 'base64'))
     }
     if (reason !== undefined) {
       payload.reason = reason

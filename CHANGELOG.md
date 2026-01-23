@@ -1,3 +1,5 @@
+**v1.1.0（2026.1.23）**  
+1.`U` `verify`模块`verify`方法`type`入参合法值移除`tls-alpn-01`  
 **v1.0.19（2026.1.22）**  
 1.`F` 修复`api`模块`getChallengeKeyAuthorization`方法逻辑错误  
 1.`F` 修复User-Agent请求头构造逻辑错误  

@@ -156,7 +156,6 @@ function getCertificateInfo(certificatein) {
     } catch {
       commonname = 'unknown'
     }
-    const issuercommonname = certificate.issuer.match(/CN=([^,\\\n]+)/)[1]
     let subjectaltname = []
     if (certificate.subjectAltName) {
       subjectaltname = certificate.subjectAltName.match(/:(.*?)(?=,|$)/g).map(match => match.slice(1).trim())
@@ -166,7 +165,7 @@ function getCertificateInfo(certificatein) {
     certificatesinfo.push({
       commonName: commonname,
       subjectAltName: subjectaltname,
-      issuerCommonName: issuercommonname,
+      issuerCommonName: certificate.issuer.match(/CN=([^,\\\n]+)/)[1],
       startDate: new Date(certificate.validFrom),
       endDate: new Date(certificate.validTo),
       authorityKeyIdentifier: x509.getExtAuthorityKeyIdentifier().kid.hex,

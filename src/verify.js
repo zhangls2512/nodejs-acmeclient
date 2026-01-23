@@ -6,12 +6,9 @@ async function verify({ authorization, accountKey, type }) {
   if (!authorization || !accountKey || !type) {
     throw 'Invalid input: authorization, accountKey and type are required.'
   }
-  const validtypes = ['http-01', 'dns-01', 'tls-alpn-01']
+  const validtypes = ['http-01', 'dns-01']
   if (!validtypes.includes(type)) {
-    throw 'Invalid type. Please provide a valid type (http-01, dns-01, or tls-alpn-01).'
-  }
-  if (type == 'tls-alpn-01') {
-    throw 'Type tls-alpn-01 is not supported yet.'
+    throw 'Invalid type. Please provide a valid type (http-01 or dns-01).'
   }
   const types = authorization.challenges.map(challenge => challenge.type)
   if (!types.includes(type)) {
@@ -25,8 +22,7 @@ async function verify({ authorization, accountKey, type }) {
   })
   try {
     if (type == 'http-01') {
-      const url = 'http://' + domain + '/.well-known/acme-challenge/' + challenge.token
-      const res = await axios.get(url, {
+      const res = await axios.get('http://' + domain + '/.well-known/acme-challenge/' + challenge.token, {
         headers: {
           'User-Agent': pkg.name + '/' + pkg.version
         }
@@ -37,7 +33,6 @@ async function verify({ authorization, accountKey, type }) {
       return 'fail'
     }
     if (type == 'dns-01') {
-      const domainout = '_acme-challenge.' + domain
       async function getcname(domain) {
         try {
           const cnames = await dns.promises.resolveCname(domain)
@@ -49,10 +44,9 @@ async function verify({ authorization, accountKey, type }) {
           return domain
         }
       }
-      const finaldomain = await getcname(domainout)
+      const finaldomain = await getcname('_acme-challenge.' + domain)
       const txts = await dns.promises.resolveTxt(finaldomain)
-      const records = txts.flat()
-      if (records.includes(keyauthorization)) {
+      if (txts.flat().includes(keyauthorization)) {
         return 'success'
       }
       return 'fail'
