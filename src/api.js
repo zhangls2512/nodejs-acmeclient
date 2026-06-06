@@ -4,11 +4,8 @@ const net = require('net')
 const jose = require('node-jose')
 const crypto = require('./crypto')
 const pkg = require('../package.json')
-function base64url(data) {
-  return Buffer.from(data).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-}
 function hexbase64url(data) {
-  return Buffer.from(data, 'hex').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+  return Buffer.from(data, 'hex').toString('base64url')
 }
 async function getRequest(url) {
   try {
@@ -31,12 +28,17 @@ async function getRequest(url) {
 }
 async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, jwk = false }) {
   try {
-    let alg = 'RS256'
-    let sigalg = 'sha256'
+    let alg = ''
+    let sigalg
     const keyinfo = crypto.getKeyInfo(privateKey)
+    if (keyinfo.keyType == 'RSA') {
+      alg = 'RS256'
+      sigalg = 'sha256'
+    }
     if (keyinfo.keyType == 'ECDSA') {
-      if (keyinfo.curveName == 'secp256r1') {
+      if (keyinfo.curveName == 'prime256v1') {
         alg = 'ES256'
+        sigalg = 'sha256'
       }
       if (keyinfo.curveName == 'secp384r1') {
         alg = 'ES384'
@@ -47,9 +49,6 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
         sigalg = 'sha512'
       }
     }
-    const jwkout = await jose.JWK.asKey(privateKey, 'pem', {
-      alg: alg
-    })
     const directoryres = await getRequest(directoryUrl)
     let apiurl
     if (apiUrl) {
@@ -64,7 +63,7 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
       url: apiurl
     }
     if (jwk) {
-      protected.jwk = jwkout
+      protected.jwk = await jose.JWK.asKey(privateKey, 'pem')
     } else {
       const accounturl = await getAccountUrl({
         directoryUrl: directoryUrl,
@@ -72,15 +71,15 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
       })
       protected.kid = accounturl
     }
-    const encodedprotected = base64url(JSON.stringify(protected))
-    const encodedpayload = base64url(JSON.stringify(payload))
+    const encodedprotected = Buffer.from(JSON.stringify(protected)).toString('base64url')
+    const encodedpayload = Buffer.from(JSON.stringify(payload)).toString('base64url')
     const response = await axios.post(apiurl, {
       protected: encodedprotected,
       payload: encodedpayload,
-      signature: nodecrypto.createSign(sigalg).update(encodedprotected + '.' + encodedpayload).sign({
+      signature: nodecrypto.sign(sigalg, Buffer.from(encodedprotected + '.' + encodedpayload), {
         key: privateKey,
         dsaEncoding: 'ieee-p1363'
-      }, 'base64url')
+      }).toString('base64url')
     }, {
       headers: {
         'Content-Type': 'application/jose+json',
@@ -109,9 +108,6 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
   }
 }
 async function getDirectoryMeta(directoryUrl) {
-  if (!directoryUrl) {
-    throw 'Invalid input: directoryUrl is required.'
-  }
   try {
     const directoryres = await getRequest(directoryUrl)
     return directoryres.meta
@@ -120,9 +116,6 @@ async function getDirectoryMeta(directoryUrl) {
   }
 }
 async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKeyId }) {
-  if (!directoryUrl || !accountKey) {
-    throw 'Invalid input: directoryUrl and accountKey are required.'
-  }
   try {
     const payload = {
       termsOfServiceAgreed: true
@@ -131,14 +124,14 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
       payload.contact = contact
     }
     if (eabMacKey && eabKeyId) {
-      const jwk = await jose.JWK.asKey(accountKey, 'pem')
       const directoryres = await getRequest(directoryUrl)
-      const encodedprotected = base64url(JSON.stringify({
+      const encodedprotected = Buffer.from(JSON.stringify({
         alg: 'HS256',
         kid: eabKeyId,
         url: directoryres.newAccount
-      }))
-      const encodedpayload = base64url(JSON.stringify(jwk))
+      })).toString('base64url')
+      const jwk = await jose.JWK.asKey(accountKey, 'pem')
+      const encodedpayload = Buffer.from(JSON.stringify(jwk)).toString('base64url')
       payload.externalAccountBinding = {
         protected: encodedprotected,
         payload: encodedpayload,
@@ -161,9 +154,6 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
   }
 }
 async function getAccountUrl({ directoryUrl, accountKey }) {
-  if (!directoryUrl || !accountKey) {
-    throw 'Invalid input: directoryUrl and accountKey are required.'
-  }
   try {
     const res = await apiRequest({
       apiName: 'newAccount',
@@ -180,9 +170,6 @@ async function getAccountUrl({ directoryUrl, accountKey }) {
   }
 }
 async function getAccountInfo({ directoryUrl, accountKey }) {
-  if (!directoryUrl || !accountKey) {
-    throw 'Invalid input: directoryUrl and accountKey are required.'
-  }
   try {
     const res = await apiRequest({
       apiName: 'newAccount',
@@ -199,16 +186,18 @@ async function getAccountInfo({ directoryUrl, accountKey }) {
   }
 }
 async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
-  if (!directoryUrl || !accountKey || !newAccountKey) {
-    throw 'Invalid input: directoryUrl, accountKey and newAccountKey are required.'
-  }
   try {
-    let alg = 'RS256'
-    let sigalg = 'sha256'
+    let alg = ''
+    let sigalg
     const keyinfo = crypto.getKeyInfo(newAccountKey)
+    if (keyinfo.keyType == 'RSA') {
+      alg = 'RS256'
+      sigalg = 'sha256'
+    }
     if (keyinfo.keyType == 'ECDSA') {
-      if (keyinfo.curveName == 'secp256r1') {
+      if (keyinfo.curveName == 'prime256v1') {
         alg = 'ES256'
+        sigalg = 'sha256'
       }
       if (keyinfo.curveName == 'secp384r1') {
         alg = 'ES384'
@@ -220,23 +209,21 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
       }
     }
     const oldjwk = await jose.JWK.asKey(accountKey, 'pem')
-    const newjwk = await jose.JWK.asKey(newAccountKey, 'pem', {
-      alg: alg
-    })
+    const newjwk = await jose.JWK.asKey(newAccountKey, 'pem')
     const directoryres = await getRequest(directoryUrl)
-    const protected = base64url(JSON.stringify({
+    const protected = Buffer.from(JSON.stringify({
       alg: alg,
       jwk: newjwk,
       url: directoryres.keyChange
-    }))
+    })).toString('base64url')
     const accounturl = await getAccountUrl({
       directoryUrl: directoryUrl,
       accountKey: accountKey
     })
-    const payload = base64url(JSON.stringify({
+    const payload = Buffer.from(JSON.stringify({
       account: accounturl,
       oldKey: oldjwk
-    }))
+    })).toString('base64url')
     await apiRequest({
       apiName: 'keyChange',
       directoryUrl: directoryUrl,
@@ -244,10 +231,10 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
       payload: {
         protected: protected,
         payload: payload,
-        signature: nodecrypto.createSign(sigalg).update(protected + '.' + payload).sign({
+        signature: nodecrypto.sign(sigalg, Buffer.from(protected + '.' + payload), {
           key: newAccountKey,
           dsaEncoding: 'ieee-p1363'
-        }, 'base64url')
+        }).toString('base64url')
       }
     })
     return 'success'
@@ -256,9 +243,6 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
   }
 }
 async function updateAccountContact({ directoryUrl, accountKey, contact }) {
-  if (!directoryUrl || !accountKey || !contact) {
-    throw 'Invalid input: directoryUrl, accountKey and contact are required.'
-  }
   try {
     const accounturl = await getAccountUrl({
       directoryUrl: directoryUrl,
@@ -278,9 +262,6 @@ async function updateAccountContact({ directoryUrl, accountKey, contact }) {
   }
 }
 async function deactivateAccount({ directoryUrl, accountKey }) {
-  if (!directoryUrl || !accountKey) {
-    throw 'Invalid input: directoryUrl and accountKey are required.'
-  }
   try {
     const accounturl = await getAccountUrl({
       directoryUrl: directoryUrl,
@@ -300,9 +281,6 @@ async function deactivateAccount({ directoryUrl, accountKey }) {
   }
 }
 async function newOrder({ directoryUrl, accountKey, domains, profile, notBefore, notAfter, replaceCertificate }) {
-  if (!directoryUrl || !accountKey || !domains || !(Array.isArray(domains) && domains.length > 0)) {
-    throw 'Invalid input: directoryUrl, accountKey and domains are required.'
-  }
   try {
     const identifiers = domains.map(item => {
       if (net.isIP(item)) {
@@ -348,9 +326,6 @@ async function newOrder({ directoryUrl, accountKey, domains, profile, notBefore,
   }
 }
 async function getOrderInfo(orderUrl) {
-  if (!orderUrl) {
-    throw 'Invalid input: orderUrl is required.'
-  }
   try {
     return await getRequest(orderUrl)
   } catch (err) {
@@ -358,9 +333,6 @@ async function getOrderInfo(orderUrl) {
   }
 }
 async function getOrderAuthorization(orderUrl) {
-  if (!orderUrl) {
-    throw 'Invalid input: orderUrl is required.'
-  }
   try {
     const orderres = await getRequest(orderUrl)
     const promises = orderres.authorizations.map(async (item) => {
@@ -372,9 +344,6 @@ async function getOrderAuthorization(orderUrl) {
   }
 }
 async function finalizeOrder({ directoryUrl, accountKey, orderUrl, csr }) {
-  if (!directoryUrl || !accountKey || !orderUrl || !csr) {
-    throw 'Invalid input: directoryUrl, accountKey, orderUrl and csr are required.'
-  }
   try {
     const csrout = csr.replace(/-----BEGIN CERTIFICATE REQUEST-----/g, '').replace(/-----END CERTIFICATE REQUEST-----/g, '').replace(/\s/g, '')
     const orderres = await getOrderInfo(orderUrl)
@@ -383,7 +352,7 @@ async function finalizeOrder({ directoryUrl, accountKey, orderUrl, csr }) {
       directoryUrl: directoryUrl,
       privateKey: accountKey,
       payload: {
-        csr: base64url(Buffer.from(csrout, 'base64'))
+        csr: Buffer.from(csrout, 'base64').toString('base64url')
       }
     })
     const result = {
@@ -398,9 +367,6 @@ async function finalizeOrder({ directoryUrl, accountKey, orderUrl, csr }) {
   }
 }
 async function getOrderCertificate(orderUrl) {
-  if (!orderUrl) {
-    throw 'Invalid input: orderUrl is required.'
-  }
   try {
     const orderres = await getOrderInfo(orderUrl)
     const res = await axios.get(orderres.certificate, {
@@ -426,9 +392,6 @@ async function getOrderCertificate(orderUrl) {
   }
 }
 async function deactivateAuthorization({ directoryUrl, accountKey, authorizationUrl }) {
-  if (!directoryUrl || !accountKey || !authorizationUrl) {
-    throw 'Invalid input: directoryUrl, accountKey and authorizationUrl are required.'
-  }
   try {
     await apiRequest({
       apiUrl: authorizationUrl,
@@ -444,9 +407,6 @@ async function deactivateAuthorization({ directoryUrl, accountKey, authorization
   }
 }
 function getChallengeKeyAuthorization({ challenge, accountKey }) {
-  if (!challenge || !accountKey) {
-    throw 'Invalid input: challenge and accountKey are required.'
-  }
   const jwk = nodecrypto.createPublicKey(accountKey).export({
     format: 'jwk'
   })
@@ -461,10 +421,38 @@ function getChallengeKeyAuthorization({ challenge, accountKey }) {
   }
   return nodecrypto.createHash('sha256').update(keyauthorization).digest('base64url')
 }
-async function respondChallenge({ directoryUrl, accountKey, challengeUrl }) {
-  if (!directoryUrl || !accountKey || !challengeUrl) {
-    throw 'Invalid input: directoryUrl, accountKey and challengeUrl are required.'
+async function getChallengeKeyAuthorizationEx({ directoryUrl, accountKey, authorization, type }) {
+  const challenge = authorization.challenges.find(challenge => challenge.type == type)
+  if (type != 'dns-persist-01') {
+    const jwk = nodecrypto.createPublicKey(accountKey).export({
+      format: 'jwk'
+    })
+    const res = Object.keys(jwk).sort().reduce((result, k) => {
+      result[k] = jwk[k]
+      return result
+    }, {})
+    const thumbprint = nodecrypto.createHash('sha256').update(JSON.stringify(res)).digest('base64url')
+    const keyauthorization = challenge.token + '.' + thumbprint
+    if (type == 'http-01') {
+      return keyauthorization
+    }
+    return nodecrypto.createHash('sha256').update(keyauthorization).digest('base64url')
   }
+  if (type == 'dns-persist-01') {
+    const arr = []
+    arr.push(challenge['issuer-domain-names'][0])
+    const accounturl = await getAccountUrl({
+      directoryUrl: directoryUrl,
+      accountKey: accountKey
+    })
+    arr.push(accounturl)
+    if (authorization.wildcard) {
+      arr.push('policy=wildcard')
+    }
+    return arr.join(';')
+  }
+}
+async function respondChallenge({ directoryUrl, accountKey, challengeUrl }) {
   try {
     const res = await apiRequest({
       apiUrl: challengeUrl,
@@ -484,14 +472,8 @@ async function respondChallenge({ directoryUrl, accountKey, challengeUrl }) {
   }
 }
 async function getCertificateRenewalInfo({ directoryUrl, certificate }) {
-  if (!directoryUrl || !certificate) {
-    throw 'Invalid input: directoryUrl and certificate are required.'
-  }
   try {
     const directoryres = await getRequest(directoryUrl)
-    if (!directoryres.renewalInfo) {
-      throw 'RenewalInfo is not supported.'
-    }
     const certificateinfo = crypto.getCertificateInfo(certificate)[0]
     return await getRequest(directoryres.renewalInfo + '/' + hexbase64url(certificateinfo.authorityKeyIdentifier) + '.' + hexbase64url(certificateinfo.serialNumber))
   } catch (err) {
@@ -499,16 +481,10 @@ async function getCertificateRenewalInfo({ directoryUrl, certificate }) {
   }
 }
 async function revokeCertificate({ directoryUrl, accountKey, certificateKey, certificate, reason }) {
-  if (!directoryUrl || !certificate) {
-    throw 'Invalid input: directoryUrl and certificate are required.'
-  }
-  if (!accountKey && !certificateKey) {
-    throw 'Invalid input: accountKey or certificateKey is required.'
-  }
   try {
     const certificateout = crypto.extractCertificates(certificate)[0].replace(/-----BEGIN CERTIFICATE-----/g, '').replace(/-----END CERTIFICATE-----/g, '').replace(/\s/g, '')
     const payload = {
-      certificate: base64url(Buffer.from(certificateout, 'base64'))
+      certificate: Buffer.from(certificateout, 'base64').toString('base64url')
     }
     if (reason !== undefined) {
       payload.reason = reason
@@ -551,6 +527,7 @@ module.exports = {
   getOrderCertificate,
   deactivateAuthorization,
   getChallengeKeyAuthorization,
+  getChallengeKeyAuthorizationEx,
   respondChallenge,
   getCertificateRenewalInfo,
   revokeCertificate

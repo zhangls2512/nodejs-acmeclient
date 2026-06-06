@@ -3,17 +3,7 @@ const dns = require('dns')
 const api = require('./api')
 const pkg = require('../package.json')
 async function verify({ authorization, accountKey, type }) {
-  if (!authorization || !accountKey || !type) {
-    throw 'Invalid input: authorization, accountKey and type are required.'
-  }
-  const validtypes = ['http-01', 'dns-01']
-  if (!validtypes.includes(type)) {
-    throw 'Invalid type. Please provide a valid type (http-01 or dns-01).'
-  }
   const types = authorization.challenges.map(challenge => challenge.type)
-  if (!types.includes(type)) {
-    throw 'Type is not found in authorization.'
-  }
   const domain = authorization.identifier.value
   const challenge = authorization.challenges.find(challenge => challenge.type == type)
   const keyauthorization = api.getChallengeKeyAuthorization({

@@ -1,3 +1,6 @@
+**v1.2.0（2026.6.6）**  
+1.`A` `api`模块新增`getChallengeKeyAuthorizationEx`方法  
+1.`A` `crypto`模块新增`generateMLDSAKeyPair`方法  
 **v1.1.0（2026.1.23）**  
 1.`U` `verify`模块`verify`方法`type`入参合法值移除`tls-alpn-01`  
 **v1.0.19（2026.1.22）**  
