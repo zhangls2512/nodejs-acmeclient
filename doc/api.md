@@ -192,7 +192,7 @@
 |---|---|---|---|
 |directoryUrl|string|是|ACME目录URL|
 |accountKey|string|是|账户私钥（pem格式）|
-|authorizationUrl|string|是|授权URL（订单信息对象中属性`authorizations`值的元素）|
+|authorization|object|是|授权信息对象，`api.getOrderAuthorization`方法返回数组的元素|
 |type|string|是|挑战类型，合法值有`http-01`、`dns-01`、`dns-persist-01`、`tls-alpn-01`|
 
 输出参数：`string` 挑战验证值  

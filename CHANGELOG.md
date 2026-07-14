@@ -1,3 +1,5 @@
+**v1.2.1（2026.7.14）**  
+1.`F` 修复`api`模块`getChallengeKeyAuthorizationEx`方法文档描述错误  
 **v1.2.0（2026.6.6）**  
 1.`A` `api`模块新增`getChallengeKeyAuthorizationEx`方法  
 1.`A` `crypto`模块新增`generateMLDSAKeyPair`方法  
