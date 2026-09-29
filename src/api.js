@@ -440,12 +440,12 @@ async function getChallengeKeyAuthorizationEx({ directoryUrl, accountKey, author
   }
   if (type == 'dns-persist-01') {
     const arr = []
-    arr.push('accounturi=' + challenge['issuer-domain-names'][0])
+    arr.push(challenge['issuer-domain-names'][0])
     const accounturl = await getAccountUrl({
       directoryUrl: directoryUrl,
       accountKey: accountKey
     })
-    arr.push(accounturl)
+    arr.push('accounturi=' + accounturl)
     if (authorization.wildcard) {
       arr.push('policy=wildcard')
     }
