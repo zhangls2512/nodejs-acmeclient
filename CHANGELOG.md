@@ -1,3 +1,5 @@
+**v1.2.2（2026.9.29）**  
+1.`F` 修复`api`模块`getChallengeKeyAuthorizationEx`方法`dns-persist-01`类型挑战返回值错误  
 **v1.2.1（2026.7.14）**  
 1.`F` 修复`api`模块`getChallengeKeyAuthorizationEx`方法文档描述错误  
 **v1.2.0（2026.6.6）**  

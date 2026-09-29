@@ -237,7 +237,6 @@ function getCsrInfo(csrpem) {
   const root = readnode(csrder, 0)
   const csi = readnode(root.value, 0)
   result.signatureAlgorithm = oidmap[readnode(readnode(root.value, csi.nextoffset).value, 0).value.toString('hex')]
-  const version = readnode(csi.value, 0)
   const subject = readnode(csi.value, readnode(csi.value, 0).nextoffset)
   const spki = readnode(csi.value, subject.nextoffset)
   result.publicKey = '-----BEGIN PUBLIC KEY-----\n' + spki.raw.toString('base64').match(/.{1,64}/g).join('\n') + '\n-----END PUBLIC KEY-----'
