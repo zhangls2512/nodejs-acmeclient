@@ -1,3 +1,5 @@
 node_modules
 .gitignore
+CHANGELOG.md
+eslint.config.js
 package-lock.json

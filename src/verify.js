@@ -3,7 +3,6 @@ const dns = require('dns')
 const api = require('./api')
 const pkg = require('../package.json')
 async function verify({ authorization, accountKey, type }) {
-  const types = authorization.challenges.map(challenge => challenge.type)
   const domain = authorization.identifier.value
   const challenge = authorization.challenges.find(challenge => challenge.type == type)
   const keyauthorization = api.getChallengeKeyAuthorization({

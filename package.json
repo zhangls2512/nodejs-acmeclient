@@ -19,6 +19,9 @@
     "jsrsasign": "latest",
     "node-jose": "latest"
   },
+  "devDependencies": {
+    "eslint": "latest"
+  },
   "scripts": {
     "release": "npm login && npm publish"
   }
