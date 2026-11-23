@@ -57,7 +57,7 @@
 |commonName|string|是|通用名称CN|
 |subjectAltName|array|是|域名、IP地址，示例：`['www.example.com','0.0.0.0','::1']`|
 |publicKey|string|是|公钥（pem格式）|
-|signatureAlgorithm|string|是|签名算法，示例：`SHA256withRSA`|
+|signatureAlgorithm|string|是|签名算法，示例：`sha256WithRSA`|
 
 **7.分离多个证书（常用于分离叶证书、中间证书）**  
 英文名：extractCertificates `同步`  

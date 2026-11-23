@@ -1,3 +1,6 @@
+**v1.3.0（2026.11.23）**  
+1.`A` `api`模块新增`getOrderCertificateEx`方法  
+2.`U` `api`模块支持`MLDSA`类型密钥  
 **v1.2.3（2026.9.29）**  
 1.`F` 修复`api`模块`getChallengeKeyAuthorizationEx`方法`dns-persist-01`类型挑战返回值错误  
 **v1.2.2（2026.9.29）**  
@@ -11,7 +14,7 @@
 1.`U` `verify`模块`verify`方法`type`入参合法值移除`tls-alpn-01`  
 **v1.0.19（2026.1.22）**  
 1.`F` 修复`api`模块`getChallengeKeyAuthorization`方法逻辑错误  
-1.`F` 修复User-Agent请求头构造逻辑错误  
+1.`F` 修复`User-Agent`请求头构造逻辑错误  
 **v1.0.18（2026.1.22）**  
 1.`F` 修复jws构造逻辑错误  
 **v1.0.17（2026.1.21）**  
@@ -19,11 +22,11 @@
 **v1.0.16（2025.11.14）**  
 1.`U` `updatelog.md`文件更名为`CHANGELOG.md`  
 **v1.0.15（2025.10.14）**  
-1.`F` 修复`crypto`模块`getCsrInfo`方法如果CSR无备用名subjectAltName会异常  
+1.`F` 修复`crypto`模块`getCsrInfo`方法如果CSR无备用名`subjectAltName`会异常  
 **v1.0.14（2025.6.7）**  
 1.`F` 删除`api.md`文件最后的两个无用空格  
 **v1.0.13（2025.4.26）**  
-1.`F` 修复`crypto`模块`getCertificateInfo`方法如果证书无公用名CN会异常  
+1.`F` 修复`crypto`模块`getCertificateInfo`方法如果证书无公用名`CN`会异常  
 **v1.0.12（2025.4.6）**  
 1.`F` 移除`api`模块重复的`getAccountUrl`方法  
 **v1.0.11（2025.3.19）**  

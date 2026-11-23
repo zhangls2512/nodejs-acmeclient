@@ -162,7 +162,20 @@
 （2）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**13.停用授权**  
+**13.获取订单证书扩展**  
+英文名：getOrderCertificateEx `异步`  
+输入参数：`string` 订单URL，必需  
+输出参数  
+（1）成功：`array` 元素：`object`，结构见下  
+|名|类型|必有|说明|
+|---|---|---|---|
+|certificates|array|是|证书（元素：`object`，有`rel`和`value`两个键。`rel`是`string`，合法值有`index`、`alternate`、`acme-optional-alternate`，`value`是`string` pem格式证书）|
+|allReady|boolean|是|证书是否全部准备好（`landmark-relative`类型`MTC`证书大概率会延迟签发，其未签发时此值为`false`）|
+
+（2）HTTP(S)请求失败  
+`err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
+`err.response`不存在：`object` `axios`返回的完整错误信息  
+**14.停用授权**  
 英文名：deactivateAuthorization `异步`  
 输入参数
 |名|类型|必需|说明|
@@ -176,7 +189,7 @@
 （2）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**14.获取挑战验证值（用于验证挑战是否完成的文件内容、DNS解析记录值...）**  
+**15.获取挑战验证值（用于验证挑战是否完成的文件内容、DNS解析记录值...）**  
 英文名：getChallengeKeyAuthorization `同步`  
 输入参数
 |名|类型|必需|说明|
@@ -185,7 +198,7 @@
 |accountKey|string|是|账户私钥（pem格式）|
 
 输出参数：`string` 挑战验证值  
-**15.获取挑战验证值扩展（用于验证挑战是否完成的文件内容、DNS解析记录值...）**  
+**16.获取挑战验证值扩展（用于验证挑战是否完成的文件内容、DNS解析记录值...）**  
 英文名：getChallengeKeyAuthorizationEx `异步`  
 输入参数
 |名|类型|必需|说明|
@@ -196,7 +209,7 @@
 |type|string|是|挑战类型，合法值有`http-01`、`dns-01`、`dns-persist-01`、`tls-alpn-01`|
 
 输出参数：`string` 挑战验证值  
-**16.请求CA验证挑战**  
+**17.请求CA验证挑战**  
 英文名：respondChallenge `异步`  
 输入参数
 |名|类型|必需|说明|
@@ -215,7 +228,7 @@
 （2）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**17.获取证书ARI续订信息**  
+**18.获取证书ARI续订信息**  
 英文名：getCertificateRenewalInfo `异步`  
 输入参数
 |名|类型|必需|说明|
@@ -228,7 +241,7 @@
 （2）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  
 `err.response`不存在：`object` `axios`返回的完整错误信息  
-**18.吊销证书**  
+**19.吊销证书**  
 英文名：revokeCertificate `异步`  
 输入参数
 |名|类型|必需|说明|

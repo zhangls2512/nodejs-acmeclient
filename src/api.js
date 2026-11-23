@@ -1,7 +1,6 @@
 const axios = require('axios')
 const nodecrypto = require('crypto')
 const net = require('net')
-const jose = require('node-jose')
 const crypto = require('./crypto')
 const pkg = require('../package.json')
 function hexbase64url(data) {
@@ -49,6 +48,9 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
         sigalg = 'sha512'
       }
     }
+    if (keyinfo.keyType == 'MLDSA') {
+      alg = 'ML-DSA-' + keyinfo.dimension
+    }
     const directoryres = await getRequest(directoryUrl)
     let apiurl
     if (apiUrl) {
@@ -63,7 +65,9 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
       url: apiurl
     }
     if (jwk) {
-      protected.jwk = await jose.JWK.asKey(privateKey, 'pem')
+      protected.jwk = nodecrypto.createPublicKey(privateKey).export({
+        format: 'jwk'
+      })
     } else {
       const accounturl = await getAccountUrl({
         directoryUrl: directoryUrl,
@@ -130,7 +134,9 @@ async function newAccount({ directoryUrl, accountKey, contact, eabMacKey, eabKey
         kid: eabKeyId,
         url: directoryres.newAccount
       })).toString('base64url')
-      const jwk = await jose.JWK.asKey(accountKey, 'pem')
+      const jwk = nodecrypto.createPublicKey(accountKey).export({
+        format: 'jwk'
+      })
       const encodedpayload = Buffer.from(JSON.stringify(jwk)).toString('base64url')
       payload.externalAccountBinding = {
         protected: encodedprotected,
@@ -208,8 +214,12 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
         sigalg = 'sha512'
       }
     }
-    const oldjwk = await jose.JWK.asKey(accountKey, 'pem')
-    const newjwk = await jose.JWK.asKey(newAccountKey, 'pem')
+    const oldjwk = nodecrypto.createPublicKey(accountKey).export({
+      format: 'jwk'
+    })
+    const newjwk = nodecrypto.createPublicKey(newAccountKey).export({
+      format: 'jwk'
+    })
     const directoryres = await getRequest(directoryUrl)
     const protected = Buffer.from(JSON.stringify({
       alg: alg,
@@ -368,25 +378,63 @@ async function finalizeOrder({ directoryUrl, accountKey, orderUrl, csr }) {
 }
 async function getOrderCertificate(orderUrl) {
   try {
+    const res = await getOrderCertificateEx(orderUrl)
+    return res.certificates.map(item.value)
+  } catch (err) {
+    throw err
+  }
+}
+async function getOrderCertificateEx(orderUrl) {
+  try {
     const orderres = await getOrderInfo(orderUrl)
     const res = await axios.get(orderres.certificate, {
       headers: {
+        'Accept': 'application/pem-certificate-chain-with-properties',
         'User-Agent': pkg.name + '/' + pkg.version
       }
     })
-    const certificates = [res.data]
-    const regex = /<([^>]+)>;rel="alternate"/g
-    let match
-    const alternates = []
-    while ((match = regex.exec(res.headers.link))) {
-      alternates.push(match[1])
+    const certificates = []
+    let allready = true
+    if (res.status == 200) {
+      certificates.push({
+        rel: 'index',
+        value: res.data
+      })
     }
+    if (res.status == 202) {
+      allready = false
+    }
+    const rels = ['rel="alternate"', 'rel="acme-optional-alternate"']
+    const alternates = res.headers.link.split(',')
     const promises = alternates.map(async (item) => {
-      const alternateres = await getRequest(item)
-      certificates.push(alternateres)
+      for (let i = 0; i < rels.length; i++) {
+        const rel = rels[i]
+        if (item.includes(rel)) {
+          const link = item.split('<')[1].split('>')[0]
+          const res = await axios.get(link, {
+            headers: {
+              'Accept': 'application/pem-certificate-chain-with-properties',
+              'User-Agent': pkg.name + '/' + pkg.version
+            }
+          })
+          if (res.status == 200) {
+            certificates.push({
+              rel: rel.split('"')[1].split('"')[0],
+              value: res.data
+            })
+          }
+          if (res.status == 202) {
+            allready = false
+          }
+          return
+        }
+      }
     })
     await Promise.all(promises)
-    return certificates
+    return {
+      certificates: certificates,
+      allReady: allready
+    }
   } catch (err) {
     throw err
   }
@@ -525,6 +573,7 @@ module.exports = {
   getOrderAuthorization,
   finalizeOrder,
   getOrderCertificate,
+  getOrderCertificateEx,
   deactivateAuthorization,
   getChallengeKeyAuthorization,
   getChallengeKeyAuthorizationEx,

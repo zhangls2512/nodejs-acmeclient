@@ -1,6 +1,6 @@
 const crypto = require('crypto')
-const { X509 } = require('jsrsasign')
 const net = require('net')
+const pkijs = require('pkijs')
 function generateRSAKeyPair(keybits = 2048) {
   return crypto.generateKeyPairSync('rsa', {
     modulusLength: keybits,
@@ -205,14 +205,62 @@ function getCsrInfo(csrpem) {
     signatureAlgorithm: ''
   }
   const oidmap = {
-    '2a864886f70d01010b': 'SHA256withRSA',
-    '2a8648ce3d040302': 'SHA256withECDSA',
-    '2a8648ce3d040303': 'SHA384withECDSA',
-    '2a8648ce3d040304': 'SHA512withECDSA',
-    '608648016503040311': 'ML-DSA-44',
-    '608648016503040312': 'ML-DSA-65',
-    '608648016503040313': 'ML-DSA-87'
+    '1.2.840.10045.4.1': 'sha1WithECDSA',
+    '1.2.840.10045.4.3.1': 'sha224WithECDSA',
+    '1.2.840.10045.4.3.2': 'sha256WithECDSA',
+    '1.2.840.10045.4.3.3': 'sha384WithECDSA',
+    '1.2.840.10045.4.3.4': 'sha512WithECDSA',
+    '2.16.840.1.101.3.4.3.9': 'sha3-224WithECDSA',
+    '2.16.840.1.101.3.4.3.10': 'sha3-256WithECDSA',
+    '2.16.840.1.101.3.4.3.11': 'sha3-384WithECDSA',
+    '2.16.840.1.101.3.4.3.12': 'sha3-512WithECDSA',
+    '1.2.840.10040.4.3': 'sha1WithDSA',
+    '2.16.840.1.101.3.4.3.1': 'sha224WithDSA',
+    '2.16.840.1.101.3.4.3.2': 'sha256WithDSA',
+    '1.2.840.1.101.3.4.3.3': 'sha384WithDSA',
+    '1.2.840.1.101.3.4.3.4': 'sha512WithDSA',
+    '2.16.840.1.101.3.4.3.5': 'sha3-224WithDSA',
+    '2.16.840.1.101.3.4.3.6': 'sha3-256WithDSA',
+    '2.16.840.1.101.3.4.3.7': 'sha3-384WithDSA',
+    '2.16.840.1.101.3.4.3.8': 'sha3-512WithDSA',
+    '1.2.840.113549.1.1.2': 'md2WithRSA',
+    '1.2.840.113549.1.1.3': 'md4WithRSA',
+    '1.2.840.113549.1.1.4': 'md5WithRSA',
+    '1.3.36.3.3.1.2': 'ripemd160WithRSA',
+    '1.2.840.113549.1.1.5': 'sha1WithRSA',
+    '1.2.840.113549.1.1.11': 'sha256WithRSA',
+    '1.2.840.113549.1.1.12': 'sha384WithRSA',
+    '1.2.840.113549.1.1.13': 'sha512WithRSA',
+    '1.2.840.113549.1.1.14': 'sha224WithRSA',
+    '1.2.840.113549.1.1.15': 'sha512-224WithRSA',
+    '1.2.840.113549.1.1.16': 'sha512-256WithRSA',
+    '1.2.156.10197.1.504': 'sm3WithRSA',
+    '2.16.840.1.101.3.4.3.13': 'sha3-224WithRSA',
+    '2.16.840.1.101.3.4.3.14': 'sha3-256WithRSA',
+    '2.16.840.1.101.3.4.3.15': 'sha3-384WithRSA',
+    '2.16.840.1.101.3.4.3.16': 'sha3-512WithRSA'
   }
+  const oidhexmap = {}
+  function oidtohex(oid) {
+    const parts = oid.split('.').map(item => Number(item))
+    let bytes = [parts[0] * 40 + parts[1]]
+    for (let i = 2; i < parts.length; i++) {
+      let item = parts[i]
+      const chunks = []
+      while (item > 0) {
+        chunks.unshift(item & 0x7f)
+        item >>= 7
+      }
+      for (let j = 0; j < chunks.length - 1; j++) {
+        chunks[j] |= 0x80
+      }
+      bytes = bytes.concat(chunks)
+    }
+    return Buffer.from(bytes).toString('hex')
+  }
+  Object.keys(oidmap).forEach(oid => {
+    oidhexmap[oidtohex(oid)] = oidmap[oid]
+  })
   function readnode(buffer, offset) {
     let ptr = offset
     const tag = buffer[ptr++]
@@ -236,7 +284,7 @@ function getCsrInfo(csrpem) {
   }
   const root = readnode(csrder, 0)
   const csi = readnode(root.value, 0)
-  result.signatureAlgorithm = oidmap[readnode(readnode(root.value, csi.nextoffset).value, 0).value.toString('hex')]
+  result.signatureAlgorithm = oidhexmap[readnode(readnode(root.value, csi.nextoffset).value, 0).value.toString('hex')]
   const subject = readnode(csi.value, readnode(csi.value, 0).nextoffset)
   const spki = readnode(csi.value, subject.nextoffset)
   result.publicKey = '-----BEGIN PUBLIC KEY-----\n' + spki.raw.toString('base64').match(/.{1,64}/g).join('\n') + '\n-----END PUBLIC KEY-----'
@@ -324,20 +372,14 @@ function getCertificateInfo(certificatein) {
     if (certificate.subjectAltName) {
       subjectaltname = certificate.subjectAltName.match(/:(.*?)(?=,|$)/g).map(match => match.slice(1).trim())
     }
-    const x509 = new X509()
-    x509.readCertPEM(item)
-    let authorityKeyIdentifier = ''
-    try {
-      authorityKeyIdentifier = x509.getExtAuthorityKeyIdentifier().kid.hex
-    } catch {
-    }
+    const pkicertificate = pkijs.Certificate.fromBER(certificate.raw)
     certificatesinfo.push({
       commonName: commonname,
       subjectAltName: subjectaltname,
       issuerCommonName: certificate.issuer.match(/CN=([^,\\\n]+)/)[1],
       startDate: new Date(certificate.validFrom),
       endDate: new Date(certificate.validTo),
-      authorityKeyIdentifier: authorityKeyIdentifier,
+      authorityKeyIdentifier: Buffer.from(pkicertificate.extensions.find(item => item.extnID == '2.5.29.35').parsedValue.keyIdentifier.valueBlock.valueHexView).toString('hex'),
       serialNumber: certificate.serialNumber.toLowerCase()
     })
   })
