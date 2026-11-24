@@ -214,6 +214,9 @@ async function updateAccountKey({ directoryUrl, accountKey, newAccountKey }) {
         sigalg = 'sha512'
       }
     }
+    if (keyinfo.keyType == 'MLDSA') {
+      alg = 'ML-DSA-' + keyinfo.dimension
+    }
     const oldjwk = nodecrypto.createPublicKey(accountKey).export({
       format: 'jwk'
     })
@@ -379,7 +382,7 @@ async function finalizeOrder({ directoryUrl, accountKey, orderUrl, csr }) {
 async function getOrderCertificate(orderUrl) {
   try {
     const res = await getOrderCertificateEx(orderUrl)
-    return res.certificates.map(item.value)
+    return res.certificates.filter(item => !item.retryAfter).map(item.value)
   } catch (err) {
     throw err
   }
@@ -393,17 +396,12 @@ async function getOrderCertificateEx(orderUrl) {
         'User-Agent': pkg.name + '/' + pkg.version
       }
     })
-    const certificates = []
+    const certificates = [{
+      rel: 'index',
+      value: res.data,
+      retryAfter: ''
+    }]
     let allready = true
-    if (res.status == 200) {
-      certificates.push({
-        rel: 'index',
-        value: res.data
-      })
-    }
-    if (res.status == 202) {
-      allready = false
-    }
     const rels = ['rel="alternate"', 'rel="acme-optional-alternate"']
     const alternates = res.headers.link.split(',')
     const promises = alternates.map(async (item) => {
@@ -417,14 +415,20 @@ async function getOrderCertificateEx(orderUrl) {
               'User-Agent': pkg.name + '/' + pkg.version
             }
           })
+          const relvalue = rel.split('"')[1].split('"')[0]
           if (res.status == 200) {
             certificates.push({
-              rel: rel.split('"')[1].split('"')[0],
-              value: res.data
+              rel: relvalue,
+              value: res.data,
+              retryAfter: ''
             })
           }
           if (res.status == 202) {
-            allready = false
+            certificates.push({
+              rel: relvalue,
+              value: '',
+              retryAfter: res.headers['retry-after']
+            })
           }
           return
         }
@@ -472,19 +476,7 @@ function getChallengeKeyAuthorization({ challenge, accountKey }) {
 async function getChallengeKeyAuthorizationEx({ directoryUrl, accountKey, authorization, type }) {
   const challenge = authorization.challenges.find(challenge => challenge.type == type)
   if (type != 'dns-persist-01') {
-    const jwk = nodecrypto.createPublicKey(accountKey).export({
-      format: 'jwk'
-    })
-    const res = Object.keys(jwk).sort().reduce((result, k) => {
-      result[k] = jwk[k]
-      return result
-    }, {})
-    const thumbprint = nodecrypto.createHash('sha256').update(JSON.stringify(res)).digest('base64url')
-    const keyauthorization = challenge.token + '.' + thumbprint
-    if (type == 'http-01') {
-      return keyauthorization
-    }
-    return nodecrypto.createHash('sha256').update(keyauthorization).digest('base64url')
+    return getChallengeKeyAuthorization(challenge, accountKey)
   }
   if (type == 'dns-persist-01') {
     const arr = []
@@ -534,7 +526,7 @@ async function revokeCertificate({ directoryUrl, accountKey, certificateKey, cer
     const payload = {
       certificate: Buffer.from(certificateout, 'base64').toString('base64url')
     }
-    if (reason !== undefined) {
+    if (Number.isInteger(reason)) {
       payload.reason = reason
     }
     if (accountKey) {

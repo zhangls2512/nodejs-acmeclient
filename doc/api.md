@@ -166,11 +166,18 @@
 英文名：getOrderCertificateEx `异步`  
 输入参数：`string` 订单URL，必需  
 输出参数  
-（1）成功：`array` 元素：`object`，结构见下  
+（1）成功：`array` 元素见下
 |名|类型|必有|说明|
 |---|---|---|---|
-|certificates|array|是|证书（元素：`object`，有`rel`和`value`两个键。`rel`是`string`，合法值有`index`、`alternate`、`acme-optional-alternate`，`value`是`string` pem格式证书）|
-|allReady|boolean|是|证书是否全部准备好（`landmark-relative`类型`MTC`证书大概率会延迟签发，其未签发时此值为`false`）|
+|certificates|array|是|证书（元素见下）|
+|allReady|boolean|是|证书是否全部准备好（`landmark-relative`类型MTC证书大概率会延迟签发，其未签发时此值为`false`）|
+
+`certificates`元素
+|名|类型|必有|说明|
+|---|---|---|---|
+|rel|string|是|合法值有`index`、`alternate`、`acme-optional-alternate`|
+|value|string|是|`retryAfter`为空字符串时为证书（pem格式），`retryAfter`为非空字符串时为空字符串|
+|retryAfter|string|是|证书准备好时为空字符串，证书未准备好时为`retry-after`请求头内容|
 
 （2）HTTP(S)请求失败  
 `err.response`存在：`object` `err.response.data`+`retryAfter`属性（如果`err.response.headers['retry-after']`存在）  

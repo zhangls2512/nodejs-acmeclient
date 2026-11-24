@@ -97,6 +97,23 @@ function getKeyInfo(key) {
     }
   }
 }
+function oidtobuffer(oid) {
+  const parts = oid.split('.').map(item => Number(item))
+  let bytes = [parts[0] * 40 + parts[1]]
+  for (let i = 2; i < parts.length; i++) {
+    let item = parts[i]
+    const chunks = []
+    while (item > 0) {
+      chunks.unshift(item & 0x7f)
+      item >>= 7
+    }
+    for (let j = 0; j < chunks.length - 1; j++) {
+      chunks[j] |= 0x80
+    }
+    bytes = bytes.concat(chunks)
+  }
+  return Buffer.from(bytes)
+}
 function generateCsr({ commonName, subjectAltName, privateKey }) {
   const commonname = commonName || subjectAltName[0]
   if (commonname && !subjectAltName.includes(commonname)) {
@@ -107,31 +124,31 @@ function generateCsr({ commonName, subjectAltName, privateKey }) {
   const keyinfo = getKeyInfo(privateKey)
   if (keyinfo.keyType == 'RSA') {
     sigalg = 'sha256'
-    sigalgoid = '1.2.840.113549.1.1.11'
+    sigalgoid = oidtobuffer('1.2.840.113549.1.1.11')
   }
   if (keyinfo.keyType == 'ECDSA') {
     if (keyinfo.curveName == 'prime256v1') {
       sigalg = 'sha256'
-      sigalgoid = Buffer.from('06082a8648ce3d040302', 'hex')
+      sigalgoid = oidtobuffer('1.2.840.10045.4.3.2')
     }
     if (keyinfo.curveName == 'secp384r1') {
       sigalg = 'sha384'
-      sigalgoid = Buffer.from('06082a8648ce3d040303', 'hex')
+      sigalgoid = oidtobuffer('1.2.840.10045.4.3.3')
     }
     if (keyinfo.curveName == 'secp521r1') {
       sigalg = 'sha512'
-      sigalgoid = Buffer.from('06082a8648ce3d040304', 'hex')
+      sigalgoid = oidtobuffer('1.2.840.10045.4.3.4')
     }
   }
   if (keyinfo.keyType == 'MLDSA') {
     if (keyinfo.dimension == 44) {
-      sigalgoid = Buffer.from('0609608648016503040311', 'hex')
+      sigalgoid = oidtobuffer('2.16.840.1.101.3.4.3.17')
     }
     if (keyinfo.dimension == 65) {
-      sigalgoid = Buffer.from('0609608648016503040312', 'hex')
+      sigalgoid = oidtobuffer('2.16.840.1.101.3.4.3.18')
     }
     if (keyinfo.dimension == 87) {
-      sigalgoid = Buffer.from('0609608648016503040313', 'hex')
+      sigalgoid = oidtobuffer('2.16.840.1.101.3.4.3.19')
     }
   }
   const publickey = crypto.createPublicKey(privateKey).export({
@@ -155,7 +172,7 @@ function generateCsr({ commonName, subjectAltName, privateKey }) {
     }
     return Buffer.concat([tagbuf, lengthbuf, value])
   }
-  const subject = asn1node(0x30, asn1node(0x31, asn1node(0x30, Buffer.concat([Buffer.from('0603550403', 'hex'), asn1node(0x0c, Buffer.from(commonname))]))))
+  const subject = asn1node(0x30, asn1node(0x31, asn1node(0x30, Buffer.concat([asn1node(0x06, oidtobuffer('2.5.4.3')), asn1node(0x0c, Buffer.from(commonname))]))))
   const sans = []
   function ipv6buffer(ip) {
     const result = Buffer.alloc(16)
@@ -163,11 +180,11 @@ function generateCsr({ commonName, subjectAltName, privateKey }) {
     const parts = ip.split(':')
     const emptyindex = parts.indexOf('')
     if (emptyindex != -1) {
-      const left = parts.slice(0, emptyindex).filter(Boolean)
-      const right = parts.slice(emptyindex + 1).filter(Boolean)
+      const left = parts.slice(0, emptyindex).filter(item => item)
+      const right = parts.slice(emptyindex + 1).filter(item => item)
       const missingcount = 8 - (left.length + right.length)
       const middle = new Array(missingcount).fill('0')
-      fullparts = [...left, ...middle, ...right]
+      fullparts = left.concat(middle).concat(right)
     } else {
       fullparts = parts
     }
@@ -189,11 +206,11 @@ function generateCsr({ commonName, subjectAltName, privateKey }) {
       sans.push(asn1node(0x87, ipv6buffer(name)))
     }
   })
-  const attributes = asn1node(0xa0, asn1node(0x30, Buffer.concat([Buffer.from('06092a864886f70d01090e', 'hex'), asn1node(0x31, asn1node(0x30, asn1node(0x30, Buffer.concat([Buffer.from('0603551d11', 'hex'), asn1node(0x04, asn1node(0x30, Buffer.concat(sans)))]))))])))
+  const attributes = asn1node(0xa0, asn1node(0x30, Buffer.concat([asn1node(0x06, oidtobuffer('1.2.840.113549.1.9.14')), asn1node(0x31, asn1node(0x30, asn1node(0x30, Buffer.concat([asn1node(0x06, oidtobuffer('2.5.29.17')), asn1node(0x04, asn1node(0x30, Buffer.concat(sans)))]))))])))
   const version = asn1node(0x02, Buffer.from([0x00]))
   const csi = asn1node(0x30, Buffer.concat([version, subject, publickey, attributes]))
   const signature = crypto.sign(sigalg, csi, privateKey)
-  const csrder = asn1node(0x30, Buffer.concat([csi, asn1node(0x30, sigalgoid), asn1node(0x03, Buffer.concat([Buffer.from([0x00]), signature]))]))
+  const csrder = asn1node(0x30, Buffer.concat([csi, asn1node(0x30, asn1node(0x06, sigalgoid)), asn1node(0x03, Buffer.concat([Buffer.from([0x00]), signature]))]))
   return '-----BEGIN CERTIFICATE REQUEST-----\n' + csrder.toString('base64').match(/.{1,64}/g).join('\n') + '\n-----END CERTIFICATE REQUEST-----'
 }
 function getCsrInfo(csrpem) {
@@ -238,28 +255,14 @@ function getCsrInfo(csrpem) {
     '2.16.840.1.101.3.4.3.13': 'sha3-224WithRSA',
     '2.16.840.1.101.3.4.3.14': 'sha3-256WithRSA',
     '2.16.840.1.101.3.4.3.15': 'sha3-384WithRSA',
-    '2.16.840.1.101.3.4.3.16': 'sha3-512WithRSA'
+    '2.16.840.1.101.3.4.3.16': 'sha3-512WithRSA',
+    '2.16.840.1.101.3.4.3.17': 'ML-DSA-44',
+    '2.16.840.1.101.3.4.3.18': 'ML-DSA-65',
+    '2.16.840.1.101.3.4.3.19': 'ML-DSA-87'
   }
   const oidhexmap = {}
-  function oidtohex(oid) {
-    const parts = oid.split('.').map(item => Number(item))
-    let bytes = [parts[0] * 40 + parts[1]]
-    for (let i = 2; i < parts.length; i++) {
-      let item = parts[i]
-      const chunks = []
-      while (item > 0) {
-        chunks.unshift(item & 0x7f)
-        item >>= 7
-      }
-      for (let j = 0; j < chunks.length - 1; j++) {
-        chunks[j] |= 0x80
-      }
-      bytes = bytes.concat(chunks)
-    }
-    return Buffer.from(bytes).toString('hex')
-  }
   Object.keys(oidmap).forEach(oid => {
-    oidhexmap[oidtohex(oid)] = oidmap[oid]
+    oidhexmap[oidtobuffer(oid).toString('hex')] = oidmap[oid]
   })
   function readnode(buffer, offset) {
     let ptr = offset
@@ -297,7 +300,7 @@ function getCsrInfo(csrpem) {
         const innernode = readnode(node.value, innerptr)
         if (innernode.tag == 0x30) {
           const oidnode = readnode(innernode.value, 0)
-          if (oidnode.tag == 0x06 && oidnode.value.toString('hex') == '550403') {
+          if (oidnode.tag == 0x06 && oidnode.value.toString('hex') == oidtobuffer('2.5.4.3').toString('hex')) {
             const valnode = readnode(innernode.value, oidnode.nextoffset)
             result.commonName = valnode.value.toString()
           }
@@ -314,12 +317,12 @@ function getCsrInfo(csrpem) {
       const attrnode = readnode(attributes.value, attrptr)
       if (attrnode.tag == 0x30) {
         const oidnode = readnode(attrnode.value, 0)
-        if (oidnode.tag == 0x06 && oidnode.value.toString('hex') == '2a864886f70d01090e') {
+        if (oidnode.tag == 0x06 && oidnode.value.toString('hex') == oidtobuffer('1.2.840.113549.1.9.14').toString('hex')) {
           const setnode = readnode(attrnode.value, oidnode.nextoffset)
           const seqnode = readnode(setnode.value, 0)
           const subseqnode = readnode(seqnode.value, 0)
           const extoidnode = readnode(subseqnode.value, 0)
-          if (extoidnode.tag == 0x06 && extoidnode.value.toString('hex') == '551d11') {
+          if (extoidnode.tag == 0x06 && extoidnode.value.toString('hex') == oidtobuffer('2.5.29.17').toString('hex')) {
             const octetnode = readnode(subseqnode.value, extoidnode.nextoffset)
             const sanseq = readnode(octetnode.value, 0)
             let sanptr = 0

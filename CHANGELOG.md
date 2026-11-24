@@ -1,3 +1,7 @@
+**v1.3.1（2026.11.24）**  
+1.`U` `api`模块`getOrderCertificateEx`方法`certificates`数组元素对象新增`retryAfter`字段  
+2.`F` `api`模块`updateAccountKey`、`crypto`模块`getCsrInfo`方法未支持`MLDSA`类型密钥  
+3.`F` 修复`crypto`模块`generateCsr`方法逻辑错误  
 **v1.3.0（2026.11.23）**  
 1.`A` `api`模块新增`getOrderCertificateEx`方法  
 2.`U` `api`模块支持`MLDSA`类型密钥  
