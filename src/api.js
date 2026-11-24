@@ -58,7 +58,11 @@ async function apiRequest({ apiUrl, apiName, directoryUrl, privateKey, payload, 
     } else {
       apiurl = directoryres[apiName]
     }
-    const nonceres = await axios.head(directoryres.newNonce)
+    const nonceres = await axios.head(directoryres.newNonce, {
+      headers: {
+        'User-Agent': pkg.name + '/' + pkg.version
+      }
+    })
     const protected = {
       alg: alg,
       nonce: nonceres.headers['replay-nonce'],
